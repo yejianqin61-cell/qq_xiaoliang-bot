@@ -212,3 +212,17 @@ SAI_REPLY = "赶羚羊啦，你这个老B灯"
 
 def is_sai_request(text: str) -> bool:
     return any(kw in text for kw in SAI_KEYWORDS)
+
+
+# ═══════════════════════════════════════════════════════════
+# 8. 妈妈 — 妈妈给我发把枪
+# ═══════════════════════════════════════════════════════════
+
+MOM_KEYWORDS = ["你妈妈是谁", "谁是你妈妈", "你妈是谁", "谁是你妈", "你妈妈是", "你的妈妈"]
+
+
+def is_mom_request(text: str) -> bool:
+    return any(kw in text for kw in MOM_KEYWORDS)
+
+
+MOM_REPLY = "妈妈给我发把枪，妈妈，妈妈~"
