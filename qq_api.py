@@ -62,7 +62,7 @@ class QQBotAPI:
                 raise RuntimeError(f"QQ API 返回错误: {data.get('code', '?')} - {data.get('message', data)}")
 
             self._token = data["access_token"]
-            self._token_expires_at = time.time() + data.get("expires_in", 7200)
+            self._token_expires_at = time.time() + int(data.get("expires_in", 7200))
             logger.info(f"AccessToken 已刷新，有效期至 "
                         f"{time.strftime('%H:%M:%S', time.localtime(self._token_expires_at))}")
             return self._token
