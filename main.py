@@ -31,6 +31,7 @@ from config import (
 )
 from qq_api import QQBotAPI
 from deepseek import DeepSeekChat
+from fortune import draw_fortune, is_fortune_request
 
 # ── 日志 ─────────────────────────────────────────────────────
 logging.basicConfig(
@@ -105,7 +106,11 @@ class XiaoliangBot:
         if is_empty_message(content):
             return
 
-        reply = await self.ai.chat(conversation_id=user_openid, user_message=cleaned)
+        # 运势抽卡 — 本地处理，不调 AI
+        if is_fortune_request(cleaned):
+            reply = draw_fortune(user_openid)
+        else:
+            reply = await self.ai.chat(conversation_id=user_openid, user_message=cleaned)
         await self.qq.send_c2c_message(openid=user_openid, content=reply, msg_id=msg_id)
 
     async def handle_group_at_message(self, data: dict):
@@ -123,14 +128,12 @@ class XiaoliangBot:
         )
 
         if is_empty_message(content):
-            await self.qq.send_group_message(
-                group_openid=group_openid,
-                content="你@我了，但没说话哦～有什么可以帮你的吗？",
-                msg_id=msg_id,
-            )
-            return
+            reply = "你@我了，但没说话——有话快说。"
+        elif is_fortune_request(cleaned):
+            reply = draw_fortune(user_openid)
+        else:
+            reply = await self.ai.chat(conversation_id=group_openid, user_message=cleaned)
 
-        reply = await self.ai.chat(conversation_id=group_openid, user_message=cleaned)
         await self.qq.send_group_message(
             group_openid=group_openid, content=reply, msg_id=msg_id
         )
