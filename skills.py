@@ -186,3 +186,16 @@ HUO_REPLY = "3，2，1，走！忽略！"
 
 def is_huo_request(text: str) -> bool:
     return any(kw in text for kw in HUO_KEYWORDS)
+
+
+# ═══════════════════════════════════════════════════════════
+# 6. 爷爷 — 叶木全 / 叶栓
+# ═══════════════════════════════════════════════════════════
+
+GRANDPA_KEYWORDS = ["叶木全", "叶栓"]
+
+GRANDPA_REPLY = "他是我爷爷，神医一名。"
+
+
+def is_grandpa_request(text: str) -> bool:
+    return any(kw in text for kw in GRANDPA_KEYWORDS)
