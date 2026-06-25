@@ -194,7 +194,7 @@ def is_huo_request(text: str) -> bool:
 
 GRANDPA_KEYWORDS = ["叶木全", "叶栓"]
 
-GRANDPA_REPLY = "他是我爷爷，神医一名。"
+GRANDPA_REPLY = "他是我爷爷，一名神医。"
 
 
 def is_grandpa_request(text: str) -> bool:
@@ -205,7 +205,7 @@ def is_grandpa_request(text: str) -> bool:
 # 7. 塞林木 — 闽南语对线
 # ═══════════════════════════════════════════════════════════
 
-SAI_KEYWORDS = ["塞林木"]
+SAI_KEYWORDS = ["塞林木","塞林木啦","我塞林老木"]
 
 SAI_REPLY = "赶羚羊啦，你这个老B灯"
 
