@@ -37,6 +37,7 @@ from skills import (
     get_weather, is_weather_request,
     is_translate_request, parse_translate,
     is_daddy_request, DADDY_REPLY,
+    is_huo_request, HUO_REPLY,
 )
 
 # ── 日志 ─────────────────────────────────────────────────────
@@ -108,6 +109,10 @@ class XiaoliangBot:
         # 优先级 1：身份问答（硬编码，不调 AI）
         if is_daddy_request(cleaned):
             return DADDY_REPLY
+
+        # 优先级 1.5：整活
+        if is_huo_request(cleaned):
+            return HUO_REPLY
 
         # 优先级 2：运势抽卡
         if is_fortune_request(cleaned):
