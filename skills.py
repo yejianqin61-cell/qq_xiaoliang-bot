@@ -199,3 +199,16 @@ GRANDPA_REPLY = "他是我爷爷，神医一名。"
 
 def is_grandpa_request(text: str) -> bool:
     return any(kw in text for kw in GRANDPA_KEYWORDS)
+
+
+# ═══════════════════════════════════════════════════════════
+# 7. 塞林木 — 闽南语对线
+# ═══════════════════════════════════════════════════════════
+
+SAI_KEYWORDS = ["塞林木"]
+
+SAI_REPLY = "赶羚羊啦，你这个老B灯"
+
+
+def is_sai_request(text: str) -> bool:
+    return any(kw in text for kw in SAI_KEYWORDS)

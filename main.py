@@ -39,6 +39,7 @@ from skills import (
     is_daddy_request, DADDY_REPLY,
     is_huo_request, HUO_REPLY,
     is_grandpa_request, GRANDPA_REPLY,
+    is_sai_request, SAI_REPLY,
 )
 
 # ── 日志 ─────────────────────────────────────────────────────
@@ -118,6 +119,10 @@ class XiaoliangBot:
         # 优先级 1.6：爷爷
         if is_grandpa_request(cleaned):
             return GRANDPA_REPLY
+
+        # 优先级 1.7：塞林木
+        if is_sai_request(cleaned):
+            return SAI_REPLY
 
         # 优先级 2：运势抽卡
         if is_fortune_request(cleaned):
