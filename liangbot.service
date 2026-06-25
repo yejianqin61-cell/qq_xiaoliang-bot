@@ -1,0 +1,22 @@
+[Unit]
+Description=小亮 QQ Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/liangbot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 main.py
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/ubuntu/liangbot/bot.log
+StandardError=append:/home/ubuntu/liangbot/error.log
+
+# 安全加固
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
