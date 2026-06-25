@@ -32,6 +32,12 @@ from config import (
 from qq_api import QQBotAPI
 from deepseek import DeepSeekChat
 from fortune import draw_fortune, is_fortune_request
+from skills import (
+    draw_rp, is_rp_request,
+    get_weather, is_weather_request,
+    is_translate_request, parse_translate,
+    is_daddy_request, DADDY_REPLY,
+)
 
 # ── 日志 ─────────────────────────────────────────────────────
 logging.basicConfig(
@@ -93,6 +99,56 @@ class XiaoliangBot:
 
     # ── 事件处理 ──────────────────────────────────────────
 
+    async def _route_message(self, user_id: str, group_id: str, content: str, cleaned: str) -> str:
+        """统一消息路由：按优先级匹配技能，都不命中则走 AI"""
+        # 优先级 0：空消息
+        if is_empty_message(content):
+            return "你@我了，但没说话——有话快说。"
+
+        # 优先级 1：身份问答（硬编码，不调 AI）
+        if is_daddy_request(cleaned):
+            return DADDY_REPLY
+
+        # 优先级 2：运势抽卡
+        if is_fortune_request(cleaned):
+            return draw_fortune(user_id)
+
+        # 优先级 3：今日人品
+        if is_rp_request(cleaned):
+            return draw_rp(user_id)
+
+        # 优先级 4：天气查询
+        if is_weather_request(cleaned):
+            return await get_weather(cleaned)
+
+        # 优先级 5：翻译
+        if is_translate_request(cleaned):
+            text, target = parse_translate(cleaned)
+            return await self._translate(text, target)
+
+        # 默认：AI 对话
+        conv_id = group_id if group_id else user_id
+        return await self.ai.chat(conversation_id=conv_id, user_message=cleaned)
+
+    async def _translate(self, text: str, target: str) -> str:
+        """翻译——单次调用 DeepSeek，不写入会话历史"""
+        target_lang = "英文" if target == "english" else "中文"
+        try:
+            resp = await self.ai.client.chat.completions.create(
+                model=self.ai.model,
+                messages=[
+                    {"role": "system", "content": f"你是翻译助手。把用户输入翻译成{target_lang}，只输出译文，不要任何解释。"},
+                    {"role": "user", "content": text},
+                ],
+                temperature=0.3,
+                max_tokens=2000,
+                timeout=30,
+            )
+            result = resp.choices[0].message.content or "翻译失败"
+            return f"🔤 翻译结果（{target_lang}）：\n{result}"
+        except Exception as e:
+            return f"翻译炸了，换个说法试试。\n（{type(e).__name__}）"
+
     async def handle_c2c_message(self, data: dict):
         """处理 C2C（私聊）消息"""
         msg_id = data.get("id", "")
@@ -103,14 +159,7 @@ class XiaoliangBot:
 
         logger.info(f"📩 C2C 消息 | user={user_openid[:12]}... | content={cleaned[:50]}")
 
-        if is_empty_message(content):
-            return
-
-        # 运势抽卡 — 本地处理，不调 AI
-        if is_fortune_request(cleaned):
-            reply = draw_fortune(user_openid)
-        else:
-            reply = await self.ai.chat(conversation_id=user_openid, user_message=cleaned)
+        reply = await self._route_message(user_openid, "", content, cleaned)
         await self.qq.send_c2c_message(openid=user_openid, content=reply, msg_id=msg_id)
 
     async def handle_group_at_message(self, data: dict):
@@ -127,12 +176,7 @@ class XiaoliangBot:
             f"user={user_openid[:12]}... | content={cleaned[:50]}"
         )
 
-        if is_empty_message(content):
-            reply = "你@我了，但没说话——有话快说。"
-        elif is_fortune_request(cleaned):
-            reply = draw_fortune(user_openid)
-        else:
-            reply = await self.ai.chat(conversation_id=group_openid, user_message=cleaned)
+        reply = await self._route_message(user_openid, group_openid, content, cleaned)
 
         await self.qq.send_group_message(
             group_openid=group_openid, content=reply, msg_id=msg_id
