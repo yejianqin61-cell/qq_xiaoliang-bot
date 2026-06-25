@@ -57,6 +57,10 @@ class QQBotAPI:
             data = resp.json()
             logger.info(f"获取 AccessToken 响应: {resp.status_code}")
 
+            if "access_token" not in data:
+                logger.error(f"获取 AccessToken 失败: {data}")
+                raise RuntimeError(f"QQ API 返回错误: {data.get('code', '?')} - {data.get('message', data)}")
+
             self._token = data["access_token"]
             self._token_expires_at = time.time() + data.get("expires_in", 7200)
             logger.info(f"AccessToken 已刷新，有效期至 "
