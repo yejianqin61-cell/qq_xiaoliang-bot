@@ -235,10 +235,24 @@ class XiaoliangBot:
         """启动 Bot — 连接 → 鉴权 → 事件循环"""
         global shutdown_flag
 
-        # 连接 + 鉴权
-        logger.info("正在连接到 QQ Bot 网关...")
-        self.ws, self.heartbeat_interval, self.session_id = await self.qq.connect()
-        logger.info(f"✅ Bot 已上线！Session: {self.session_id[:16]}...")
+        # 连接 + 鉴权（首次用完整连接，之后优先 Resume）
+        if self.session_id:
+            # 尝试 Resume 快速恢复
+            try:
+                logger.info("尝试 Resume 恢复会话...")
+                self.ws = await self.qq.resume(self.session_id, self._last_seq)
+                self.heartbeat_interval = 41250  # 默认值，Resume 不会重新给
+                logger.info(f"✅ Resume 秒连成功！Session: {self.session_id[:16]}...")
+            except Exception as e:
+                logger.warning(f"Resume 失败: {e}，回退到完整连接")
+                self.session_id = ""
+                self._last_seq = None
+
+        if not self.session_id:
+            logger.info("正在连接到 QQ Bot 网关...")
+            self.ws, self.heartbeat_interval, self.session_id = await self.qq.connect()
+            logger.info(f"✅ Bot 已上线！Session: {self.session_id[:16]}...")
+            self._last_seq = None
 
         # 启动心跳任务
         heartbeat_task = asyncio.create_task(self.heartbeat_loop())
@@ -264,6 +278,7 @@ class XiaoliangBot:
 
                     elif op == 9:  # Invalid Session
                         logger.error("鉴权失败 (OpCode 9)！请检查 AppID/AppSecret")
+                        self.session_id = ""  # 清除无效 session，下次完整鉴权
                         break
 
                     elif op == 10:  # Hello (一般只在连接时发送一次)

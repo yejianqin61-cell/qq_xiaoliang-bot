@@ -183,3 +183,50 @@ class QQBotAPI:
         logger.info(f"鉴权成功！Session ID: {session_id}  Bot: {ready['d'].get('user', {}).get('username', '?')}")
 
         return ws, heartbeat_interval, session_id
+
+    async def resume(self, session_id: str, last_seq: Optional[int] = None) -> ClientConnection:
+        """
+        Resume 重连 (OpCode 6) — 比完整重连快，几乎无感
+
+        Args:
+            session_id: 上次连接的 session_id
+            last_seq: 最后收到的 s 值
+
+        Returns:
+            新的 WebSocket 连接（已恢复会话）
+
+        Raises:
+            RuntimeError: Resume 被服务器拒绝，需要完整重连
+        """
+        ws_url = await self.get_gateway_url()
+        token = await self.get_access_token()
+
+        ws = await websockets.connect(ws_url, max_size=2**20)
+        logger.info("Resume: WebSocket 已连接")
+
+        # Hello
+        hello = json.loads(await ws.recv())
+        if hello.get("op") != 10:
+            raise RuntimeError(f"Resume: 期望 OpCode 10，实际收到: {hello}")
+        logger.info(f"Resume: 收到 Hello")
+
+        # Resume
+        resume_payload = {
+            "op": 6,
+            "d": {
+                "token": f"QQBot {token}",
+                "session_id": session_id,
+                "seq": last_seq,
+            },
+        }
+        await ws.send(json.dumps(resume_payload))
+        logger.info(f"Resume: 已发送 OpCode 6 (session={session_id[:12]}..., seq={last_seq})")
+
+        # 等待恢复结果
+        reply = json.loads(await ws.recv())
+        if reply.get("t") == "RESUMED":
+            logger.info("Resume: ✅ 会话已恢复！")
+            return ws
+        else:
+            await ws.close()
+            raise RuntimeError(f"Resume: 服务器拒绝恢复: {reply}")
